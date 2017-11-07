@@ -6,30 +6,24 @@ const accessToken = process.env.PATREON_ACCESS_TOKEN
 const pageCount = 100
 const url = `https://www.patreon.com/api/oauth2/api/campaigns/1137737/pledges` +
   `?type=pledge&sort=created&page%5Bcount%5D=${pageCount}&access_token=${accessToken}`
-let pledges = []
 
-const getPatreonData = function (url, callback) {
+const getPatreonData = function (url, pledges = []) {
   console.log(`Fetching: ${url}`)
-  fetch(url)
-    .then(function(response){
-      return response.json()
-    })
-    .then(function(json){
-      if (json.data && json.data.length) {
-        json.data.forEach(itm => pledges.push(itm))
+  return fetch(url)
+    .then(response => response.json())
+    .then(function(body) {
+      if (Array.isArray(body.data)) {
+        pledges = pledges.concat(body.data)
       }
-      if (json.links && json.links.next) { // if set, this is the next URL to query
-        getPatreonData(`${json.links.next}&type=pledge&access_token=${accessToken}`, callback);
-      } else {
-        callback(); //Call when we are finished
-      }
-    })
-    .catch(function(error) {
-      console.error(error);
+      return body.links && body.links.next 
+        ? getPatreonData(`${body.links.next}&type=pledge&access_token=${accessToken}`, pledges) 
+        : pledges
     })
 }
 
-getPatreonData(url, () => {
-  const filename = `pledges-${pledges.length}.json`
-  fs.writeFile(filename, JSON.stringify(pledges, null, 2), 'utf8', () => console.log(`We're done folks! Saved date in ${filename}.`));
-})  
+getPatreonData(url)
+  .then(pledges => {
+    const filename = `pledges-${pledges.length}.json`
+    fs.writeFile(filename, JSON.stringify(pledges, null, 2), 'utf8', () => console.log(`We're done folks! Saved date in ${filename}.`))
+  })
+  .catch(error => console.log(error))
