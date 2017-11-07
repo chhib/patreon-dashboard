@@ -4,7 +4,8 @@ require('dotenv').config();
 
 const accessToken = process.env.PATREON_ACCESS_TOKEN
 const pageCount = 100
-const url = `https://www.patreon.com/api/oauth2/api/campaigns/1137737/pledges?access_token=${accessToken}&type=pledge&page%5Bcount%5D=${pageCount}`
+const url = `https://www.patreon.com/api/oauth2/api/campaigns/1137737/pledges` +
+  `?type=pledge&sort=created&page%5Bcount%5D=${pageCount}&access_token=${accessToken}`
 let pledges = []
 
 const getPatreonData = function (url, callback) {
