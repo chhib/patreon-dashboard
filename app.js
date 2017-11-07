@@ -4,7 +4,7 @@ require('dotenv').config();
 
 const accessToken = process.env.PATREON_ACCESS_TOKEN
 const pageCount = 100
-const url = `https://www.patreon.com/api/oauth2/api/campaigns/1137737/pledges?access_token=${accessToken}&type=pledge&page%5Bcount%5D=${pageCount}&include=data`
+const url = `https://www.patreon.com/api/oauth2/api/campaigns/1137737/pledges?access_token=${accessToken}&type=pledge&page%5Bcount%5D=${pageCount}`
 let pledges = []
 
 const getPatreonData = function (url, callback) {
@@ -18,7 +18,7 @@ const getPatreonData = function (url, callback) {
         json.data.forEach(itm => pledges.push(itm))
       }
       if (json.links && json.links.next) { // if set, this is the next URL to query
-        getPatreonData(`${json.links.next}&type=pledge&include=data&access_token=${accessToken}`, callback);
+        getPatreonData(`${json.links.next}&type=pledge&access_token=${accessToken}`, callback);
       } else {
         callback(); //Call when we are finished
       }
