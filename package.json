@@ -11,8 +11,9 @@
   "dependencies": {
     "dotenv": "^4.0.0",
     "json2csv": "^3.11.5",
-    "moment": "^2.20.1",
+    "moment": "^2.21.0",
     "node-fetch": "^1.7.3",
-    "patreon": "^0.3.0"
+    "patreon": "^0.3.0",
+    "supersniff": "^2.1.0"
   }
 }
