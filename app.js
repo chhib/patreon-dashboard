@@ -20,7 +20,7 @@ const csvFields = [
 ];
 
 const getPatreonData = function (url, pledges = []) {
-  console.log(`Fetching: ${url}`)
+  (process.env.NODE_ENV !== 'production') && console.log(`Fetching: ${url}`)
   return fetch(url)
     .then(response => response.json())
     .then(function(body) {
@@ -55,43 +55,38 @@ const refreshTokensAndGetExpiration = () => {
       `&refresh_token=${refreshToken}` +
       `&client_id=${clientId}` +
       `&clientSecret=${clientSecret}`
-    return sniff.memo('api-output.json', () =>
-        fetch(url, {method: 'POST'})
-          .then(response => response.json()))
-        .then(sniff)
+    return fetch(url, {method: 'POST'})
+        .then(response => response.json())
         .then(body => {
-        console.log(body)
-        accessToken = body.access_token
-        refreshToken = body.refresh_token
-        expires = body.expires_in*1000 + Date.now()
-        const file = `PATREON_CLIENT_ID=${clientId}\n` +
-          `PATREON_CLIENT_SECRET=${clientSecret}\n` +
-          `PATREON_ACCESS_TOKEN=${accessToken}\n` +
-          `PATREON_REFRESH_TOKEN=${refreshToken}\n` +
-          `PATREON_EXPIRES=${expires}`
-        console.log(file)
-        return new Promise((resolve, reject) => {
-          fs.writeFile('.env', file, (err) => {
-             if (err) reject(err);
-             else resolve(expires);
-          })
-        })
-      })
-
+          accessToken = body.access_token
+          refreshToken = body.refresh_token
+          expires = body.expires_in*1000 + Date.now()
+          return new Promise((resolve, reject) => {
+            if (process.env.NODE_ENV !== 'production') {
+              const file = `PATREON_CLIENT_ID=${clientId}\n` +
+                `PATREON_CLIENT_SECRET=${clientSecret}\n` +
+                `PATREON_ACCESS_TOKEN=${accessToken}\n` +
+                `PATREON_REFRESH_TOKEN=${refreshToken}\n` +
+                `PATREON_EXPIRES=${expires}`
+                
+              fs.writeFile('.env', file, (err) => {
+                if (err) reject(err);
+                else resolve(expires);
+              })
+            } else {
+              resolve(expires)
+            }
+          })})
 }
-
+        
+          
 // Check if auth is valid
 getTokensExpiration()
   .catch((error) => {
     console.log(`Got error: ${error}. Attempting to refresh tokens.`)
     return refreshTokensAndGetExpiration()
   })
-  .then(sniff)
-  .then(result => {
-    console.log(`Got expires is at ${new Date(parseInt(result,10))}, should now do the actual fetch`)
-    return getPatreonData(url)
-  })
-  .then(sniff)
+  .then(result => getPatreonData(url))
   .then(pledges => {
     if (pledges.length > 0) {
       const filename = `pledges-${moment().format('YYYY-MM-DD')}-(${pledges.length})`
@@ -105,18 +100,3 @@ getTokensExpiration()
     }
   })
   .catch(error => console.log(error))
-
-// getPatreonData(url)
-//   .then(pledges => {
-//     if (pledges.length > 0) {
-//       const filename = `pledges-${moment().format('YYYY-MM-DD')}-(${pledges.length})`
-//       const filenameJson = `${filename}.json`
-//       const csv = json2csv({ data: pledges, fields: csvFields })
-//       const filenameCsv = `${filename}.csv`
-//       fs.writeFile(filenameJson, JSON.stringify(pledges, null, 2), 'utf8', () => console.log(`We're done folks! Saved date in ${filenameJson}.`))
-//       fs.writeFile(filenameCsv, csv, 'utf8', () => console.log(`We're done folks! Saved date in ${filenameCsv}.`))
-//     } else {
-//       console.log(`Did not fetch any pledges.`)
-//     }
-//   })
-//   .catch(error => console.log(error))
